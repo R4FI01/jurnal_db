@@ -22,13 +22,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tmp = $_FILES['file_pdf']['tmp_name'];
     $folder = "uploads/" . $nama_file;
     $allowed_ext = 'pdf';
-    $file_ext = strtolower(pathinfo($_FILES['jurnal']['name'], PATHINFO_EXTENSION));
+    $file_ext = strtolower(pathinfo($nama_file, PATHINFO_EXTENSION));
 
-    if ($file_ext !== $allowed_ext || $_FILES['jurnal']['type'] !== 'application/pdf') {
-        $_SESSION['error'] = "File harus berformat PDF!";
-        header("Location: upload.php");
-        exit();
-    }
+    if ($file_ext !== $allowed_ext || $_FILES['file_pdf']['type'] !== 'application/pdf') {
+    $_SESSION['error'] = "File harus berformat PDF!";
+    header("Location: upload.php");
+    exit();
+}
+
 
 
     if (move_uploaded_file($tmp, $folder)) {

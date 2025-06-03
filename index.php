@@ -1,179 +1,154 @@
 <?php
 require_once "db/config.php";
 
-$search = '';
-$kategori = '';
+// Inisialisasi pencarian dan filter
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+$kategori = isset($_GET['kategori']) ? mysqli_real_escape_string($conn, $_GET['kategori']) : '';
 
-$query = "SELECT * FROM jurnal WHERE status = 'disetujui'";
-
-if (isset($_GET['search']) && $_GET['search'] !== '') {
-    $search = mysqli_real_escape_string($conn, $_GET['search']);
-    $query .= " AND judul LIKE '%$search%'";
-}
-
-if (isset($_GET['kategori']) && $_GET['kategori'] !== '') {
-    $kategori = mysqli_real_escape_string($conn, $_GET['kategori']);
-    $query .= " AND kategori = '$kategori'";
-}
-
-if (!isset($_SESSION['pengguna'])) {
-    header("Location: login_pengguna.php");
-    exit();
-}
-
-$query .= " ORDER BY id DESC";
-$result = mysqli_query($conn, $query);
-
+// Pagination setup
 $perPage = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$start = ($page > 1) ? ($page * $perPage) - $perPage : 0;
+$start = ($page - 1) * $perPage;
 
+// Query total data
 $total = $conn->query("SELECT COUNT(*) as total FROM jurnal WHERE status='disetujui'")->fetch_assoc()['total'];
 $pages = ceil($total / $perPage);
 
-$query = $conn->query("SELECT * FROM jurnal WHERE status='disetujui' ORDER BY id DESC LIMIT $start, $perPage");
+// Query data jurnal
+$query = "SELECT * FROM jurnal WHERE status = 'disetujui'";
+if ($search !== '') $query .= " AND judul LIKE '%$search%'";
+if ($kategori !== '') $query .= " AND kategori = '$kategori'";
+$query .= " ORDER BY id DESC LIMIT $start, $perPage";
+$result = mysqli_query($conn, $query);
 
+// Ambil kategori unik
+$kategori_result = mysqli_query($conn, "SELECT DISTINCT kategori FROM jurnal WHERE status = 'disetujui'");
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Daftar Jurnal yang Disetujui</title>
+    <title>Jurnal Disetujui</title>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
-            background: #f8fafc;
+            background: #f4f4f8;
             margin: 0;
             padding: 40px;
-            color: #1e293b;
+            color: #1f2937;
         }
-
         .container {
-            max-width: 900px;
+            max-width: 960px;
             margin: auto;
         }
-
         h2 {
-            font-size: 28px;
-            margin-bottom: 20px;
-            font-weight: 600;
+            font-size: 30px;
+            margin-bottom: 25px;
+            font-weight: bold;
+            text-align: center;
         }
-
         .search-bar {
             display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 25px;
         }
-
         .search-bar input,
         .search-bar select {
-            padding: 10px 14px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 14px;
             flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
         }
-
         .btn-search {
-            background: #1d4ed8;
+            padding: 10px 16px;
+            background-color: #2563eb;
             color: white;
             border: none;
-            border-radius: 8px;
-            padding: 10px 16px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: 0.2s;
         }
-
         .btn-search:hover {
-            background: #1e40af;
+            background-color: #1d4ed8;
         }
-
         .card {
             background: white;
             padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-            transition: transform 0.2s ease;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 18px;
         }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
         .card h3 {
             margin: 0 0 10px;
-            font-size: 18px;
-            color: #0f172a;
-            font-weight: 600;
+            color: #111827;
         }
-
         .card p {
             margin: 4px 0;
             font-size: 14px;
-            color: #334155;
         }
-
         .card a {
-            color: #2563eb;
-            font-weight: 500;
+            color: #1d4ed8;
             text-decoration: none;
+            font-weight: 500;
         }
-
         .card a:hover {
             text-decoration: underline;
         }
-
         .pagination {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             margin-top: 30px;
         }
-
         .pagination a {
             padding: 8px 12px;
-            background: #e2e8f0;
+            background: #e5e7eb;
             border-radius: 6px;
+            color: #111827;
             text-decoration: none;
-            color: #1e293b;
-            font-weight: 500;
-            transition: 0.2s;
         }
-
-        .pagination a:hover {
-            background: #cbd5e1;
+        .pagination a.active {
+            background: #1d4ed8;
+            color: white;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>📚 Daftar Jurnal yang Disetujui</h2>
+<div class="container">
+    <h2>📄 Daftar Jurnal Disetujui</h2>
 
-        <div class="search-bar">
-            <input type="text" placeholder="Cari judul..." />
-            <select>
-                <option>Semua Kategori</option>
-                <!-- Bisa diisi kategori dari database -->
-            </select>
-            <button class="btn-search">Cari</button>
+    <form class="search-bar" method="GET" action="">
+        <input type="text" name="search" placeholder="Cari judul..." value="<?= htmlspecialchars($search) ?>">
+        <select name="kategori">
+            <option value="">Semua Kategori</option>
+            <?php while ($kat = mysqli_fetch_assoc($kategori_result)): ?>
+                <option value="<?= $kat['kategori'] ?>" <?= ($kategori === $kat['kategori']) ? 'selected' : '' ?>>
+                    <?= $kat['kategori'] ?>
+                </option>
+            <?php endwhile; ?>
+        </select>
+        <button type="submit" class="btn-search">Cari</button>
+    </form>
+
+    <?php while ($row = mysqli_fetch_assoc($result)): ?>
+        <div class="card">
+            <h3><?= strtoupper($row['judul']) ?></h3>
+            <p><strong>Penulis:</strong> <?= $row['penulis'] ?></p>
+            <p><strong>Kategori:</strong> <?= $row['kategori'] ?></p>
+            <p><strong>Tahun:</strong> <?= $row['tahun'] ?></p>
+            <p><strong>File:</strong> <a href="uploads/<?= $row['file_pdf'] ?>" target="_blank">Lihat</a></p>
         </div>
+    <?php endwhile; ?>
 
-        <?php while ($row = mysqli_fetch_assoc($result)) : ?>
-            <div class="card">
-                <h3><?php echo strtoupper($row['judul']); ?></h3>
-                <p><strong>Penulis:</strong> <?php echo $row['penulis']; ?></p>
-                <p><strong>Kategori:</strong> <?php echo $row['kategori']; ?></p>
-                <p><strong>Tahun:</strong> <?php echo $row['tahun']; ?></p>
-                <p><strong>File:</strong>  <a class="link-lihat" href="uploads/<?= $row['file_pdf'] ?>" target="_blank">Lihat</a></p>
-            </div>
-        <?php endwhile; ?>
-
-        <div class="pagination">
-            <a href="#">1</a>
-            <a href="#">2</a>
-        </div>
+    <div class="pagination">
+        <?php for ($i = 1; $i <= $pages; $i++): ?>
+            <a href="?search=<?= urlencode($search) ?>&kategori=<?= urlencode($kategori) ?>&page=<?= $i ?>"
+               class="<?= ($i === $page) ? 'active' : '' ?>"><?= $i ?></a>
+        <?php endfor; ?>
     </div>
+</div>
 </body>
 </html>
