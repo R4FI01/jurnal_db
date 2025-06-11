@@ -1,44 +1,52 @@
 <?php
 session_start();
-if (isset($_SESSION['success'])) {
-    echo "<div class='alert alert-success'>" . $_SESSION['success'] . "</div>";
-    unset($_SESSION['success']);
-}
-if (isset($_SESSION['error'])) {
-    echo "<div class='alert alert-danger'>" . $_SESSION['error'] . "</div>";
-    unset($_SESSION['error']);
-}
-
 require_once "db/config.php";
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $judul = $_POST['judul'];
-    $penulis = $_POST['penulis'];
-    $kategori = $_POST['kategori'];
-    $tahun = $_POST['tahun'];
-    $abstrak = $_POST['abstrak'];
-
-    $nama_file = $_FILES['file_pdf']['name'];
-    $tmp = $_FILES['file_pdf']['tmp_name'];
-    $folder = "uploads/" . $nama_file;
-    $allowed_ext = 'pdf';
-    $file_ext = strtolower(pathinfo($nama_file, PATHINFO_EXTENSION));
-
-    if ($file_ext !== $allowed_ext || $_FILES['file_pdf']['type'] !== 'application/pdf') {
-    $_SESSION['error'] = "File harus berformat PDF!";
-    header("Location: upload.php");
-    exit();
+// Hanya bisa diakses setelah login
+if (!isset($_SESSION['pengguna_id'])) {
+    $_SESSION['error'] = "Silakan login terlebih dahulu.";
+    header("Location: login_pengguna.php");
+    exit;
 }
 
+$pesan = "";
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $judul     = mysqli_real_escape_string($conn, $_POST['judul']);
+    $penulis   = mysqli_real_escape_string($conn, $_POST['penulis']);
+    $kategori  = mysqli_real_escape_string($conn, $_POST['kategori']);
+    $tahun     = (int)$_POST['tahun'];
+    $abstrak   = mysqli_real_escape_string($conn, $_POST['abstrak']);
+    $pengguna_id = $_SESSION['pengguna_id'];
 
+    // Validasi file PDF
+    $nama_file = $_FILES['file_pdf']['name'];
+    $tmp       = $_FILES['file_pdf']['tmp_name'];
+    $folder    = "uploads/" . $nama_file;
+    $file_ext  = strtolower(pathinfo($nama_file, PATHINFO_EXTENSION));
+
+    if ($file_ext !== 'pdf' || $_FILES['file_pdf']['type'] !== 'application/pdf') {
+        $_SESSION['error'] = "File harus berformat PDF!";
+        header("Location: upload.php");
+        exit();
+    }
 
     if (move_uploaded_file($tmp, $folder)) {
-        $insert = mysqli_query($conn, "INSERT INTO jurnal (judul, penulis, kategori, tahun, abstrak, file_pdf, status, tanggal_upload) 
-                    VALUES ('$judul', '$penulis', '$kategori', '$tahun', '$abstrak', '$nama_file', 'pending', NOW())");
-        $pesan = $insert ? "Jurnal berhasil diunggah dan menunggu persetujuan." : "Gagal menyimpan ke database.";
+        $insert = mysqli_query($conn, "INSERT INTO jurnal 
+            (judul, penulis, kategori, tahun, abstrak, file_pdf, status, tanggal_upload, pengguna_id) 
+            VALUES 
+            ('$judul', '$penulis', '$kategori', '$tahun', '$abstrak', '$nama_file', 'pending', NOW(), $pengguna_id)");
+
+        if ($insert) {
+            $_SESSION['success'] = "✅ Jurnal berhasil diunggah dan menunggu persetujuan.";
+        } else {
+            $_SESSION['error'] = "❌ Gagal menyimpan ke database.";
+        }
     } else {
-        $pesan = "Gagal mengunggah file.";
+        $_SESSION['error'] = "❌ Gagal mengunggah file.";
     }
+
+    header("Location: upload.php");
+    exit();
 }
 ?>
 
@@ -51,9 +59,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="bg-light">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 sticky-top">
     <div class="container">
-        <a class="navbar-brand" href="index.php">📚 Sistem Publikasi Jurnal</a>
+        <a class="navbar-brand" href="dashboard_pengguna.php">📚 Dashboard Pengguna</a>
+        <div class="d-flex">
+            <a href="logout.php" class="btn btn-outline-light btn-sm">Logout</a>
+        </div>
     </div>
 </nav>
 
@@ -62,8 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-body">
             <h3 class="card-title mb-4">Form Upload Jurnal</h3>
 
-            <?php if (!empty($pesan)): ?>
-                <div class="alert alert-info"><?= $pesan ?></div>
+            <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success"><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
+            <?php endif; ?>
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-danger"><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
             <?php endif; ?>
 
             <form method="POST" enctype="multipart/form-data">
@@ -82,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Tahun</label>
-                        <input type="number" name="tahun" class="form-control" required>
+                        <input type="number" name="tahun" class="form-control" required min="1900" max="<?= date('Y') ?>">
                     </div>
                 </div>
                 <div class="mb-3">

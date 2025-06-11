@@ -15,7 +15,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['pengguna_id'] = $data['id'];
             $_SESSION['pengguna_nama'] = $data['nama'];
             $_SESSION['success_message'] = "Login berhasil! Selamat datang, " . $data['nama'];
-            header("Location: home.php");
+            header("Location: dashboard_pengguna.php");
             exit();
         } else {
             $error = "Password salah!";

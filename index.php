@@ -1,7 +1,7 @@
 <?php
 require_once "db/config.php";
 
-// Inisialisasi pencarian dan filter
+
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
 $kategori = isset($_GET['kategori']) ? mysqli_real_escape_string($conn, $_GET['kategori']) : '';
 
@@ -10,18 +10,18 @@ $perPage = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $start = ($page - 1) * $perPage;
 
-// Query total data
+
 $total = $conn->query("SELECT COUNT(*) as total FROM jurnal WHERE status='disetujui'")->fetch_assoc()['total'];
 $pages = ceil($total / $perPage);
 
-// Query data jurnal
+
 $query = "SELECT * FROM jurnal WHERE status = 'disetujui'";
 if ($search !== '') $query .= " AND judul LIKE '%$search%'";
 if ($kategori !== '') $query .= " AND kategori = '$kategori'";
 $query .= " ORDER BY id DESC LIMIT $start, $perPage";
 $result = mysqli_query($conn, $query);
 
-// Ambil kategori unik
+
 $kategori_result = mysqli_query($conn, "SELECT DISTINCT kategori FROM jurnal WHERE status = 'disetujui'");
 ?>
 
@@ -118,7 +118,7 @@ $kategori_result = mysqli_query($conn, "SELECT DISTINCT kategori FROM jurnal WHE
 </head>
 <body>
 <div class="container">
-    <h2>📄 Daftar Jurnal Disetujui</h2>
+    <h2>📄 Daftar Jurnal </h2>
 
     <form class="search-bar" method="GET" action="">
         <input type="text" name="search" placeholder="Cari judul..." value="<?= htmlspecialchars($search) ?>">
