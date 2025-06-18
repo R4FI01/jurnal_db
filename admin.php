@@ -143,7 +143,9 @@ $query = mysqli_query($conn, "SELECT * FROM jurnal ORDER BY id DESC");
             <td class="status-<?= strtolower($row['status']) ?>">
                 <?= ucfirst($row['status']) ?>
             </td>
-            <td><a href="uploads/<?= htmlspecialchars($row['file_pdf']) ?>" target="_blank">Lihat</a></td>
+            <td><a href="uploads/<?= htmlspecialchars($row['file_pdf']) ?>" target="_blank">Lihat</a>
+            <a href="pembayaran/verifikasi_pembayaran.php">Verifikasi Pembayaran</a>
+        </td>
             <td>
                 <?php if ($row['status'] === 'pending') { ?>
                     <a class="btn btn-approve" href="?aksi=setujui&id=<?= $row['id'] ?>" onclick="return confirm('Setujui jurnal ini?')">Setujui</a>

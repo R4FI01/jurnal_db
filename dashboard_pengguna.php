@@ -10,8 +10,21 @@ $pengguna_id = $_SESSION['pengguna_id'];
 
 require_once 'db/config.php';
 
-// Ambil jurnal milik pengguna dari database
-$jurnal = mysqli_query($conn, "SELECT * FROM jurnal WHERE pengguna_id = '$pengguna_id'");
+
+$jurnal = mysqli_query($conn, "
+    SELECT j.*, 
+       (
+           SELECT p.status 
+           FROM pembayaran_manual p 
+           WHERE p.jurnal_id = j.id 
+           ORDER BY p.id DESC 
+           LIMIT 1
+       ) AS status_pembayaran
+FROM jurnal j
+WHERE j.pengguna_id = '$pengguna_id'
+");
+
+
 $total_jurnal = mysqli_num_rows($jurnal);
 ?>
 
@@ -112,29 +125,71 @@ $total_jurnal = mysqli_num_rows($jurnal);
                 <table class="table table-bordered mt-3">
                     <thead>
                         <tr>
-                            <th>Judul</th>
-                            <th>Penulis</th>
-                            <th>Tanggal Unggah</th>
-                            <th>Aksi</th>
+                          <th>Judul</th>
+                          <th>Penulis</th>
+                          <th>Tanggal Unggah</th>
+                          <th>Status Pembayaran</th> <!-- Tambahan -->
+                          <th>Aksi</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         <?php while ($row = mysqli_fetch_assoc($jurnal)): ?>
+                            
+<!-- Modal Metode Pembayaran -->
+<div class="modal fade" id="modalMetode<?= $row['id'] ?>" tabindex="-1" aria-labelledby="modalLabel<?= $row['id'] ?>" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalLabel<?= $row['id'] ?>">Pilih Metode Pembayaran</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Silakan pilih metode pembayaran untuk jurnal:</p>
+        <div class="d-grid gap-2">
+          <a href="pembayaran/metode_transfer.php?jurnal_id=<?= $row['id'] ?>" class="btn btn-outline-primary">Transfer Bank</a>
+          <a href="pembayaran/metode_qris.php?jurnal_id=<?= $row['id'] ?>" class="btn btn-outline-success">QRIS / e-Wallet</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
                             <tr>
                                 <td><?= htmlspecialchars($row['judul']) ?></td>
                                 <td><?= htmlspecialchars($row['penulis']) ?></td>
                                 <td><?= htmlspecialchars($row['tanggal_upload']) ?></td>
                                 <td>
-                                    <?php
-                                        $pdf = isset($row['file_pdf']) ? htmlspecialchars($row['file_pdf']) : '';
-                                        if ($pdf) {
-                                            echo "<a href='uploads/$pdf' target='_blank' class='btn btn-sm btn-primary'>Lihat</a>";
-                                        } else {
-                                            echo "<span class='text-muted'>Belum ada file</span>";
-                                        }
-                                    ?>
-                                
-                                </td>
+    <?php
+        $status = $row['status_pembayaran'] ?? 'Belum Bayar';
+if ($status == 'Menunggu') {
+    echo "<span class='badge bg-warning text-dark'>Menunggu</span>";
+} elseif ($status == 'Diterima') {
+    echo "<span class='badge bg-success'>Diterima</span>";
+} elseif ($status == 'Ditolak') {
+    echo "<span class='badge bg-danger'>Ditolak</span>";
+} else {
+    echo "<span class='badge bg-secondary'>Belum Bayar</span>";
+}
+
+
+    ?>
+</td>
+<td>
+    <div class="d-flex gap-1">
+        <?php if (!empty($row['file_pdf'])): ?>
+            <a href="uploads/<?= htmlspecialchars($row['file_pdf']) ?>" target="_blank" class="btn btn-sm btn-primary">Lihat</a>
+        <?php else: ?>
+            <span class="text-muted">Belum ada file</span>
+        <?php endif; ?>
+
+        
+            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalMetode<?= $row['id'] ?>">Bayar</button>
+
+        
+    </div>
+</td>
+
                             </tr>
                         <?php endwhile; ?>
                     </tbody>
