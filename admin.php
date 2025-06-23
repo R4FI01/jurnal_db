@@ -7,154 +7,160 @@ if (!isset($_SESSION['admin'])) {
 
 require_once 'db/config.php';
 
-if (isset($_GET['aksi']) && isset($_GET['id'])) {
-    $id = intval($_GET['id']);
-    $aksi = $_GET['aksi'] === 'setujui' ? 'disetujui' : 'ditolak';
+$total_jurnal = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM jurnal"));
+$total_diterima = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM jurnal WHERE status = 'disetujui'"));
+$total_ditolak = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM jurnal WHERE status = 'ditolak'"));
+$total_pengguna = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM pengguna"));
 
-    $update = mysqli_query($conn, "UPDATE jurnal SET status='$aksi' WHERE id=$id");
-    if ($update) {
-        $_SESSION['success'] = "Status jurnal berhasil diperbarui.";
-    } else {
-        $_SESSION['error'] = "Gagal memperbarui status jurnal.";
-    }
-    header("Location: admin.php");
-    exit();
-}
-
-$query = mysqli_query($conn, "SELECT * FROM jurnal ORDER BY id DESC");
+$latest_jurnal = mysqli_query($conn, "SELECT * FROM jurnal ORDER BY id DESC LIMIT 5");
+$latest_pengguna = mysqli_query($conn, "SELECT * FROM pengguna ORDER BY id DESC LIMIT 5");
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Halaman Admin</title>
+    <title>Dashboard Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: #eef1f5;
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', sans-serif;
         }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .logout-btn {
-            padding: 8px 16px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-        }
-        .alert {
-            padding: 10px;
-            margin: 15px 0;
-            border-radius: 5px;
-        }
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .alert-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        table {
-            margin-top: 20px;
+        .navbar {
+            background-color: #2c3e50;
+            position: fixed;
             width: 100%;
-            border-collapse: collapse;
-            background: white;
+            top: 0;
+            z-index: 1000;
         }
-        th, td {
-            padding: 10px;
-            border: 1px solid #ccc;
-            text-align: left;
+        .navbar-brand, .nav-link {
+            color: white !important;
         }
-        th {
-            background-color: #f8f9fa;
+        .container {
+            margin-top: 120px;
         }
-        .btn {
-            padding: 5px 10px;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 13px;
-            margin-right: 4px;
+        .section-title {
+            border-left: 5px solid #3498db;
+            padding-left: 10px;
+            margin-top: 40px;
         }
-        .btn-approve {
-            background-color: #28a745;
-            color: white;
-        }
-        .btn-reject {
-            background-color: #dc3545;
-            color: white;
-        }
-        .btn-delete {
-            background-color: #6c757d;
-            color: white;
-        }
-        .status-disetujui {
-            color: green;
-            font-weight: bold;
-        }
-        .status-pending {
-            color: orange;
-            font-weight: bold;
-        }
-        .status-ditolak {
-            color: red;
-            font-weight: bold;
+        .card {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <h2>Selamat Datang, Admin!</h2>
-        <a class="logout-btn" href="logout.php">Logout</a>
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="admin.php">Admin Panel</a>
+    <div class="collapse navbar-collapse justify-content-end">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="daftar_jurnal.php">Daftar Jurnal</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="pembayaran/verifikasi_pembayaran.php">Verifikasi Pembayaran</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="kelola_pengguna.php">Kelola Pengguna</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="logout.php">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+    <div class="alert alert-info text-center">
+        <strong>Informasi Terbaru:</strong> Pastikan untuk memverifikasi jurnal dan pembayaran setiap hari.
     </div>
 
-    <?php if (isset($_SESSION['success'])): ?>
-        <div class="alert alert-success"><?= $_SESSION['success'] ?></div>
-        <?php unset($_SESSION['success']); ?>
-    <?php endif; ?>
-    
-    <?php if (isset($_SESSION['error'])): ?>
-        <div class="alert alert-danger"><?= $_SESSION['error'] ?></div>
-        <?php unset($_SESSION['error']); ?>
-    <?php endif; ?>
+    <div class="row text-center mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Jurnal</h5>
+                    <p class="card-text fs-4 fw-bold text-primary"><?= $total_jurnal ?></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h5 class="card-title">Diterima</h5>
+                    <p class="card-text fs-4 fw-bold text-success"><?= $total_diterima ?></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h5 class="card-title">Ditolak</h5>
+                    <p class="card-text fs-4 fw-bold text-danger"><?= $total_ditolak ?></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-dark">
+                <div class="card-body">
+                    <h5 class="card-title">Total Pengguna</h5>
+                    <p class="card-text fs-4 fw-bold text-dark"><?= $total_pengguna ?></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <h3>Daftar Jurnal</h3>
-    <table>
-        <tr>
-            <th>Judul</th>
-            <th>Penulis</th>
-            <th>Kategori</th>
-            <th>Tahun</th>
-            <th>Status</th>
-            <th>File</th>
-            <th>Aksi</th>
-        </tr>
-        <?php while ($row = mysqli_fetch_assoc($query)) { ?>
-        <tr>
-            <td><?= htmlspecialchars($row['judul']) ?></td>
-            <td><?= htmlspecialchars($row['penulis']) ?></td>
-            <td><?= htmlspecialchars($row['kategori']) ?></td>
-            <td><?= htmlspecialchars($row['tahun']) ?></td>
-            <td class="status-<?= strtolower($row['status']) ?>">
-                <?= ucfirst($row['status']) ?>
-            </td>
-            <td><a href="uploads/<?= htmlspecialchars($row['file_pdf']) ?>" target="_blank">Lihat</a>
-            <a href="pembayaran/verifikasi_pembayaran.php">Verifikasi Pembayaran</a>
-        </td>
-            <td>
-                <?php if ($row['status'] === 'pending') { ?>
-                    <a class="btn btn-approve" href="?aksi=setujui&id=<?= $row['id'] ?>" onclick="return confirm('Setujui jurnal ini?')">Setujui</a>
-                    <a class="btn btn-reject" href="?aksi=tolak&id=<?= $row['id'] ?>" onclick="return confirm('Tolak jurnal ini?')">Tolak</a>
-                <?php } ?>
-                <a class="btn btn-delete" href="hapus.php?id=<?= $row['id'] ?>" onclick="return confirm('Yakin ingin menghapus jurnal ini?')">Hapus</a>
-            </td>
-        </tr>
-        <?php } ?>
+    <h4 class="section-title">Jurnal Terbaru</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Judul</th>
+                <th>Penulis</th>
+                <th>Kategori</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while($j = mysqli_fetch_assoc($latest_jurnal)): ?>
+            <tr>
+                <td><?= htmlspecialchars($j['judul']) ?></td>
+                <td><?= htmlspecialchars($j['penulis']) ?></td>
+                <td><?= htmlspecialchars($j['kategori']) ?></td>
+                <td>
+                    <span class="badge bg-<?php
+                        if ($j['status'] == 'disetujui') echo 'success';
+                        elseif ($j['status'] == 'ditolak') echo 'danger';
+                        else echo 'warning';
+                    ?>">
+                        <?= ucfirst($j['status']) ?>
+                    </span>
+                </td>
+            </tr>
+            <?php endwhile; ?>
+        </tbody>
     </table>
+
+    <h4 class="section-title">Pengguna Terbaru</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nama</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while($p = mysqli_fetch_assoc($latest_pengguna)): ?>
+            <tr>
+                <td><?= htmlspecialchars($p['nama']) ?></td>
+                <td><?= htmlspecialchars($p['email']) ?></td>
+            </tr>
+            <?php endwhile; ?>
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
