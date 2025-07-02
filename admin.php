@@ -56,7 +56,7 @@ $latest_pengguna = mysqli_query($conn, "SELECT * FROM pengguna ORDER BY id DESC 
     <div class="collapse navbar-collapse justify-content-end">
       <ul class="navbar-nav">
         <li class="nav-item">
-          <a class="nav-link" href="daftar_jurnal.php">Daftar Jurnal</a>
+          <a class="nav-link" href="daftar_jurnal_admin.php">Daftar Jurnal</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="pembayaran/verifikasi_pembayaran.php">Verifikasi Pembayaran</a>
@@ -65,7 +65,7 @@ $latest_pengguna = mysqli_query($conn, "SELECT * FROM pengguna ORDER BY id DESC 
           <a class="nav-link" href="kelola_pengguna.php">Kelola Pengguna</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="logout.php">Logout</a>
+          <a class="nav-link" href="logout_pengguna.php">Logout</a>
         </li>
       </ul>
     </div>

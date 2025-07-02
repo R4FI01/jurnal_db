@@ -38,16 +38,13 @@ $query = mysqli_query($conn, "SELECT * FROM jurnal ORDER BY id DESC");
           <a class="nav-link" href="admin.php">Dashboard</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="daftar_jurnal.php">Daftar Jurnal</a>
-        </li>
-        <li class="nav-item">
           <a class="nav-link" href="pembayaran/verifikasi_pembayaran.php">Verifikasi Pembayaran</a>
         </li>
         <li class="nav-item">
           <a class="nav-link active" href="kelola_pengguna.php">Kelola Pengguna</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="logout.php">Logout</a>
+          <a class="nav-link" href="logout_pengguna.php">Logout</a>
         </li>
       </ul>
     </div>
@@ -78,14 +75,14 @@ $query = mysqli_query($conn, "SELECT * FROM jurnal ORDER BY id DESC");
                 <td><?= htmlspecialchars($row['kategori']) ?></td>
                 <td><?= htmlspecialchars($row['tahun']) ?></td>
                 <td>
-                    <span class="badge bg-
-                        <?php
-                        if ($row['status'] == 'disetujui') echo 'success';
-                        elseif ($row['status'] == 'ditolak') echo 'danger';
-                        else echo 'warning';
-                        ?>">
-                        <?= ucfirst($row['status']) ?>
-                    </span>
+                      <span class="fw-bold 
+                      <?php
+                            if ($row['status'] == 'disetujui') echo 'text-success';
+                            elseif ($row['status'] == 'ditolak') echo 'text-danger';
+                            else echo 'text-warning';
+                      ?>">
+                            <?= ucfirst($row['status']) ?>
+                      </span>
                 </td>
                 <td>
                     <a class="btn btn-sm btn-primary" href="uploads/<?= htmlspecialchars($row['file_pdf']) ?>" target="_blank">Lihat</a>

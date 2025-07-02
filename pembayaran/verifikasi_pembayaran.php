@@ -1,4 +1,10 @@
 <?php
+session_start();
+if (!isset($_SESSION['admin'])) {
+    header("Location: ../login.php");
+    exit();
+}
+
 include '../db/config.php';
 
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
@@ -18,7 +24,6 @@ if (!empty($keyword)) {
     }
 }
 
-
 $result = mysqli_query($conn, $query);
 ?>
 
@@ -27,81 +32,43 @@ $result = mysqli_query($conn, $query);
 <head>
   <meta charset="UTF-8">
   <title>Verifikasi Pembayaran</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #eef1f5;
-      margin: 0;
-      padding: 20px;
+      background-color: #f4f6f9;
+      font-family: 'Segoe UI', sans-serif;
     }
-
-    h2 {
-      text-align: center;
-      color: #333;
-    }
-
-    .filter-box {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .filter-box input[type="text"],
-    .filter-box select {
-      padding: 8px;
-      margin: 5px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-
-    .filter-box button {
-      padding: 8px 15px;
-      background: #3498db;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    th, td {
-      padding: 12px;
-      text-align: center;
-      border-bottom: 1px solid #ddd;
-    }
-
-    th {
+    .navbar {
       background-color: #2c3e50;
-      color: white;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 1000;
     }
-
+    .navbar-brand, .nav-link {
+      color: white !important;
+    }
+    .container {
+      margin-top: 120px;
+    }
     img {
       width: 100px;
       border-radius: 8px;
     }
-
     .btn-verif {
       padding: 5px 10px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
-
     .btn-acc {
       background: #2ecc71;
       color: white;
     }
-
     .btn-tolak {
       background: #e74c3c;
       color: white;
     }
-
     @media screen and (max-width: 768px) {
       table, thead, tbody, th, td, tr {
         display: block;
@@ -124,57 +91,95 @@ $result = mysqli_query($conn, $query);
   </style>
 </head>
 <body>
-  <h2>Verifikasi Pembayaran</h2>
 
-  <div class="filter-box">
-    <form method="get">
-      <input type="text" name="search" placeholder="Cari nama / jurnal ID..." value="<?= htmlspecialchars($keyword) ?>">
-      <select name="status">
+<!-- Navbar Admin Gaya Konsisten -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="../admin.php">Admin Panel</a>
+    <div class="collapse navbar-collapse justify-content-end">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="../admin.php">Dashboard</a>
+        </li> 
+        <li class="nav-item"> 
+          <a class="nav-link" href="../daftar_jurnal_admin.php">Daftar Jurnal</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="../kelola_pengguna.php">Kelola Pengguna</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="../logout.php">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <h2 class="text-center mb-4">Verifikasi Pembayaran</h2>
+
+  <div class="filter-box text-center mb-4">
+    <form method="get" class="d-flex flex-wrap justify-content-center gap-2">
+      <input type="text" name="search" class="form-control w-auto" placeholder="Cari nama / jurnal ID..." value="<?= htmlspecialchars($keyword) ?>">
+      <select name="status" class="form-select w-auto">
         <option value="">Semua Status</option>
         <option value="Menunggu" <?= $status_filter == "Menunggu" ? "selected" : "" ?>>Menunggu</option>
         <option value="Diterima" <?= $status_filter == "Diterima" ? "selected" : "" ?>>Diterima</option>
         <option value="Ditolak" <?= $status_filter == "Ditolak" ? "selected" : "" ?>>Ditolak</option>
       </select>
-      <button type="submit">Filter</button>
+      <button type="submit" class="btn btn-primary">Filter</button>
     </form>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Jurnal ID</th>
-        <th>Nama Pengguna</th>
-        <th>Jumlah (Rp)</th>
-        <th>Bukti</th>
-        <th>Status</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php while($row = mysqli_fetch_assoc($result)): ?>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead class="table-dark">
         <tr>
-          <td><?= $row['id'] ?></td>
-          <td><?= $row['jurnal_id'] ?></td>
-          <td><?= $row['nama_pengguna'] ?></td>
-          <td><?= number_format($row['jumlah'], 0, ',', '.') ?></td>
-          <td>
-            <a href="../uploads/<?= $row['bukti_transfer'] ?>" target="_blank">
-              <img src="../uploads/<?= $row['bukti_transfer'] ?>" alt="Bukti">
-            </a>
-          </td>
-          <td><?= $row['status'] ?></td>
-          <td>
-            <?php if($row['status'] == "Menunggu"): ?>
-              <a href="verifikasi_proses.php?id=<?= $row['id'] ?>&aksi=acc" class="btn-verif btn-acc">Terima</a>
-              <a href="verifikasi_proses.php?id=<?= $row['id'] ?>&aksi=tolak" class="btn-verif btn-tolak">Tolak</a>
-            <?php else: ?>
-              -
-            <?php endif; ?>
-          </td>
+          <th>ID</th>
+          <th>Jurnal ID</th>
+          <th>Nama Pengguna</th>
+          <th>Jumlah (Rp)</th>
+          <th>Bukti</th>
+          <th>Status</th>
+          <th>Aksi</th>
         </tr>
-      <?php endwhile; ?>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <?php while($row = mysqli_fetch_assoc($result)): ?>
+          <tr>
+            <td><?= $row['id'] ?></td>
+            <td><?= $row['jurnal_id'] ?></td>
+            <td><?= $row['nama_pengguna'] ?></td>
+            <td><?= number_format($row['jumlah'], 0, ',', '.') ?></td>
+            <td>
+              <a href="../uploads/<?= $row['bukti_transfer'] ?>" target="_blank">
+                <img src="../uploads/<?= $row['bukti_transfer'] ?>" alt="Bukti Transfer">
+              </a>
+            </td>
+            <td>
+              <span class="badge bg-<?php
+                if ($row['status'] == 'Diterima') echo 'success';
+                elseif ($row['status'] == 'Ditolak') echo 'danger';
+                else echo 'warning';
+              ?>">
+                <?= $row['status'] ?>
+              </span>
+            </td>
+            <td>
+              <?php if($row['status'] == "Menunggu"): ?>
+                <a href="verifikasi_proses.php?id=<?= $row['id'] ?>&aksi=acc" class="btn-verif btn-acc">Terima</a>
+                <a href="verifikasi_proses.php?id=<?= $row['id'] ?>&aksi=tolak" class="btn-verif btn-tolak">Tolak</a>
+              <?php else: ?>
+                -
+              <?php endif; ?>
+            </td>
+          </tr>
+        <?php endwhile; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

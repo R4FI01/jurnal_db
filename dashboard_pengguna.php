@@ -82,7 +82,7 @@ $total_jurnal = mysqli_num_rows($jurnal);
             <ul class="navbar-nav">
                 <li class="nav-item"><a class="nav-link" href="index.php">Lihat Jurnal</a></li>
                 <li class="nav-item"><a class="nav-link" href="upload.php">Unggah Jurnal</a></li>
-                <li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
+                <li class="nav-item"><a class="nav-link" href="logout_pengguna.php">Logout</a></li>
             </ul>
         </div>
     </div>
@@ -128,7 +128,7 @@ $total_jurnal = mysqli_num_rows($jurnal);
                           <th>Judul</th>
                           <th>Penulis</th>
                           <th>Tanggal Unggah</th>
-                          <th>Status Pembayaran</th> <!-- Tambahan -->
+                          <th>Status Pembayaran</th> 
                           <th>Aksi</th>
                         </tr>
                     </thead>
@@ -136,7 +136,6 @@ $total_jurnal = mysqli_num_rows($jurnal);
                     <tbody>
                         <?php while ($row = mysqli_fetch_assoc($jurnal)): ?>
                             
-<!-- Modal Metode Pembayaran -->
 <div class="modal fade" id="modalMetode<?= $row['id'] ?>" tabindex="-1" aria-labelledby="modalLabel<?= $row['id'] ?>" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">

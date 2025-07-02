@@ -133,7 +133,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 <body>
     <div class="login-container">
-        <h2>🔐 Login Pengguna</h2>
+        <h2>🔐 Silahkan Login</h2>
         <?php if (isset($error)) echo "<div class='error'>$error</div>"; ?>
         <form method="POST">
             <input type="email" name="email" placeholder="Email" required />
